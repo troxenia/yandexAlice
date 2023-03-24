@@ -53,8 +53,8 @@ def handle_dialog(req, res):
         'я куплю'
     ]:
         res['response']['text'] = f'{animals_to_buy[0].capitalize()} можно найти на Яндекс.Маркете!'
+        del animals_to_buy[0]
         if len(animals_to_buy) > 1:
-            del animals_to_buy[0]
             sessionStorage[user_id] = {
                 'suggests': [
                     "Не хочу.",
