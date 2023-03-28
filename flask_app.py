@@ -38,6 +38,7 @@ def handle_dialog(req, res):
     user_id = req['session']['user_id']
 
     if req['session']['new']:
+        sessionStorage.clear()
         cur_city, name = 0, None
         res['response']['text'] = 'Привет, назови свое имя.'
         res['response']['buttons'] = get_suggests(user_id)
@@ -78,23 +79,26 @@ def handle_dialog(req, res):
         'играем',
         'хочу',
         'я хочу',
-        'я сыграю'
+        'я сыграю',
+        'покажи город на карте'
     ]:
-        game_on = True
-        sessionStorage[user_id] = {
-            'suggests': [
-                "Картинка-подсказка",
-                "Сдаюсь",
-            ]
-        }
-        res['response']['text'] = 'text'
-        res['response']['card'] = {
-            "type": "BigImage",
-            "image_id": cities[list(cities.keys())[cur_city]][0],
-            "title": "Угадай город на картинке"
-        }
-        res['response']['buttons'] = get_suggests(user_id)
-        return
+        if cur_city < len(cities):
+            game_on = True
+            sessionStorage[user_id] = {
+                'suggests': [
+                    "Картинка-подсказка",
+                    "Сдаюсь",
+                ]
+            }
+            res['response']['text'] = 'text'
+            res['response']['card'] = {
+                "type": "BigImage",
+                "image_id": cities[list(cities.keys())[cur_city]][0],
+                "title": "Угадай город на картинке"
+            }
+            res['response']['buttons'] = get_suggests(user_id)
+            return
+        res['response']['end_session'] = True
 
     if game_on:
         if get_city(req) == list(cities.keys())[cur_city]:
@@ -105,6 +109,7 @@ def handle_dialog(req, res):
                     'suggests': [
                         "Дальше",
                         "Не хочу",
+                        "Покажи город на карте"
                     ]
                 }
                 res['response']['text'] = 'Правильно, молодец! Играем дальше?'
@@ -143,14 +148,21 @@ def handle_dialog(req, res):
                     'suggests': [
                         "Дальше",
                         "Не хочу",
+                        "Покажи город на карте"
                     ]
                 }
                 res['response']['text'] = f'Правильный ответ - {list(cities.keys())[cur_city - 1].capitalize()}! ' \
                                           f'Играем дальше?'
                 res['response']['buttons'] = get_suggests(user_id)
             else:
+                sessionStorage[user_id] = {
+                    'suggests': [
+                        "Покажи город на карте"
+                    ]
+                }
                 res['response']['text'] = f'Правильный ответ - {list(cities.keys())[cur_city - 1].capitalize()}! ' \
                                           f'Игра окончена.'
+                res['response']['buttons'] = get_suggests(user_id)
             return
 
         if not req['request']['original_utterance'].lower() in [
@@ -172,6 +184,7 @@ def handle_dialog(req, res):
 
     game_on = False
     res['response']['text'] = "Пока!"
+    res['response']['end_session'] = True
 
 
 def get_suggests(user_id):
@@ -179,10 +192,16 @@ def get_suggests(user_id):
     if user_id in sessionStorage:
         session = sessionStorage[user_id]
 
-        suggests += [
-            {'title': suggest, 'hide': True}
-            for suggest in session['suggests']
-        ]
+        url_suggest = "Покажи город на карте"
+        suggests = [
+                       {'title': suggest, 'hide': True} if suggest != url_suggest else {
+                           "title": suggest,
+                           "url": f"https://yandex.ru/maps/?mode=search&text="
+                                  f"{list(cities.keys())[cur_city - 1].capitalize()}",
+                           "hide": True
+                       }
+                       for suggest in session['suggests']
+                   ] + suggests
 
     return suggests
 
