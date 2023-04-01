@@ -107,12 +107,10 @@ def handle_dialog(req, res):
             if cur_city < len(cities):
                 sessionStorage[user_id] = {
                     'suggests': [
-                        "Дальше",
-                        "Не хочу",
-                        "Покажи город на карте"
+                        "Сдаюсь"
                     ]
                 }
-                res['response']['text'] = 'Правильно, молодец! Играем дальше?'
+                res['response']['text'] = 'Правильно, молодец! А в какой стране этот город?'
                 res['response']['buttons'] = get_suggests(user_id)
             else:
                 res['response']['text'] = 'Правильно, молодец! Игра окончена.'
@@ -210,6 +208,12 @@ def get_city(req):
     for entity in req['request']['nlu']['entities']:
         if entity['type'] == 'YANDEX.GEO':
             return entity['value'].get('city', None)
+
+
+def get_country(req):
+    for entity in req['request']['nlu']['entities']:
+        if entity['type'] == 'YANDEX.GEO':
+            return entity['value'].get('country', None)
 
 
 def get_first_name(req):
